@@ -71,15 +71,16 @@ We will configure a Raspberry Pi to act as access point for the dash button. Sim
         sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
         sudo iptables -A FORWARD -i eth0 -o wlan0 -j ACCEPT
         sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
-
-10. Reboot the Raspberry Pi (`sudo reboot`)
-11. Test whether the access point works by running `sudo hostapd /etc/hostapd/hostapd.conf`. You should be able to connect to the access point with any wireless device.
-12. Activate your Dash button using the Amazon app. You can abort the activation at the point where you have to select a product.
-13. Redirect the Amazon endpoint to the Raspberry Pi by adding the following line to */etc/dnsmasq.conf*:
+        
+10. Make the rules persistent by installing *iptables-persistent*: `sudo apt-get install iptables-persistent`
+11. Reboot the Raspberry Pi (`sudo reboot`)
+12. Test whether the access point works by running `sudo hostapd /etc/hostapd/hostapd.conf`. You should be able to connect to the access point with any wireless device.
+13. Activate your Dash button using the Amazon app. You can abort the activation at the point where you have to select a product.
+14. Redirect the Amazon endpoint to the Raspberry Pi by adding the following line to */etc/dnsmasq.conf*:
 
         address=/parker-gw-eu.amazon.com/192.168.50.1
 
-14. Restart *dnsmasq*: `sudo service dnsmasq restart`
+15. Restart *dnsmasq*: `sudo service dnsmasq restart`
 
 ## Listening for button presses
 
