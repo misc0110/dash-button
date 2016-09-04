@@ -2,7 +2,20 @@
 
 ## Standalone: Raspberry Pi
 
-We will configure a Raspberry Pi to act as access point for the dash button. Similar to the openWRT solution, this gives us full control over the button's communication. 
+We will configure a Raspberry Pi to act as access point for the dash button. Similar to the openWRT solution, this gives us full control over the button's communication. The Raspberry Pi will be connected to the internet through the ethernet port and provide a WiFi access point through a WiFi adapter. 
+
+All scripts run on the Raspberry Pi and no server/computer is needed to interact with the button.
+
+**Advantages**
+
++ no dependencies
++ no connection to Amazon
++ no router modifications needed
+
+**Disadvantages**
+
++ requires hardware (RPi + WiFi Dongle)
+
 
 ## Configuration
 
