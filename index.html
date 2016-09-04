@@ -8,14 +8,14 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
     <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
 
-    <title>Dash-button by misc0110</title>
+    <title>Amazon Dash Button Fun by misc0110</title>
   </head>
 
   <body>
 
     <header>
       <div class="container">
-        <h1>Dash-button</h1>
+        <h1>Amazon Dash Button Fun</h1>
         <h2>Making the Amazon Dash Button useful</h2>
 
         <section id="downloads">
@@ -32,45 +32,47 @@
 <a id="amazon-dash-button-fun" class="anchor" href="#amazon-dash-button-fun" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Amazon Dash Button Fun</h1>
 
 <h2>
-<a id="quick-hack-observing-traffic" class="anchor" href="#quick-hack-observing-traffic" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Quick Hack: Observing Traffic</h2>
+<a id="dash-endpoint-openwrt-router" class="anchor" href="#dash-endpoint-openwrt-router" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dash Endpoint: OpenWRT Router</h2>
 
-<p>Observing the traffic is the easiest way to play with the dash button. </p>
+<p>If you have a router running openWRT, only a few modifications are required to use it as endpoint for the Dash button. A custom endpoint prevents the button from connecting to Amazon.</p>
 
-<p>When pressing the Dash button, it wakes up and connects to the WiFi. To start the communication with Amazon, it has to first get an IP address from the router using the DHCP protocol. We know that the button was pressed if we see such a packet in the observed traffic that has the dash button's MAC address as sender.</p>
+<p>After the button has its IP address, it starts to resolve <code>parker-gw-eu.amazon.com</code>. By sending a fake DNS-entry, we can redirect the communication to our own server. </p>
 
 <p><strong>Advantages</strong></p>
 
 <ul>
-<li>easy</li>
-<li>no hardware required</li>
+<li>easy setup</li>
+<li>does not connect to Amazon</li>
 </ul>
 
 <p><strong>Disadvantages</strong></p>
 
 <ul>
-<li>has to observe the network traffic</li>
-<li>still connects to Amazon</li>
-<li>annoying notifications on the phone</li>
+<li>router with custom firmware required</li>
 </ul>
 
 <h2>
 <a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration</h2>
 
 <ol>
-<li>You just have to activate the Dash button using the Amazon app. You can abort the activation at the point where you have to select a product.</li>
+<li>Activate your Dash button using the Amazon app. You can abort the activation at the point where you have to select a product.</li>
+<li>
+<p>Edit <em>/etc/config/dhcp</em>, add the following line in the <code>config dnsmasq</code> section:</p>
+
+<pre><code>list address '/parker-gw-eu.amazon.com/192.168.1.10`
+</code></pre>
+
+<p>Here, <code>192.168.1.10</code> is the IP address of our Dash endpoint. This can be either a local IP or any IP address on the internet.</p>
+</li>
+<li><p>Restart dnsmasq: <code>/etc/init.d/dnsmasq restart</code></p></li>
 </ol>
-
-<h2>
-<a id="getting-the-mac-address" class="anchor" href="#getting-the-mac-address" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting the MAC address</h2>
-
-<p>Run <code>discover.py</code> and follow the instructions.</p>
 
 <h2>
 <a id="listening-for-button-presses" class="anchor" href="#listening-for-button-presses" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Listening for button presses</h2>
 
-<p>Set the <code>BUTTON</code> variable at the top of the <code>listen.py</code> file to the button's MAC address. Run <code>listen.py</code> as root. </p>
+<p>Run the <code>listen.py</code> script as your Dash endpoint on the server specified in <em>/etc/config/dhcp</em>. In this example this would be a local computer with the IP  <code>192.168.1.10</code>. </p>
 
-<p>Everytime the button is pressed, it's MAC address is displayed.</p>
+<p>Everytime the button is pressed, it connects to our endpoint. The script outputs the button's MAC address on every press.</p>
       </section>
     </div>
 
