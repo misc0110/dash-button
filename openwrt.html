@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <title>Amazon Dash Button Fun by misc0110</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>Amazon Dash Button Fun</h1>
+        <h2>Making the Amazon Dash Button useful</h2>
+
+        <section id="downloads">
+          <a href="https://github.com/misc0110/dash-button/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/misc0110/dash-button/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/misc0110/dash-button" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1>
+<a id="amazon-dash-button-fun" class="anchor" href="#amazon-dash-button-fun" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dash Endpoint: OpenWRT Router</h1>
+
+<p>If you have a router running openWRT, only a few modifications are required to use it as endpoint for the Dash button. A custom endpoint prevents the button from connecting to Amazon.</p>
+
+<p>After the button has its IP address, it starts to resolve <code>parker-gw-eu.amazon.com</code>. By sending a fake DNS-entry, we can redirect the communication to our own server. </p>
+
+<p><strong>Advantages</strong></p>
+
+<ul>
+<li>easy setup</li>
+<li>does not connect to Amazon</li>
+</ul>
+
+<p><strong>Disadvantages</strong></p>
+
+<ul>
+<li>router with custom firmware required</li>
+</ul>
+
+<h2>
+<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration</h2>
+
+<ol>
+<li>Activate your Dash button using the Amazon app. You can abort the activation at the point where you have to select a product.</li>
+<li>
+<p>Edit <em>/etc/config/dhcp</em>, add the following line in the <code>config dnsmasq</code> section:</p>
+
+<pre><code>list address '/parker-gw-eu.amazon.com/192.168.1.10`
+</code></pre>
+
+<p>Here, <code>192.168.1.10</code> is the IP address of our Dash endpoint. This can be either a local IP or any IP address on the internet.</p>
+</li>
+<li><p>Restart dnsmasq: <code>/etc/init.d/dnsmasq restart</code></p></li>
+</ol>
+
+<h2>
+<a id="listening-for-button-presses" class="anchor" href="#listening-for-button-presses" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Listening for button presses</h2>
+
+<p>Run the <code>listen.py</code> script as your Dash endpoint on the server specified in <em>/etc/config/dhcp</em>. In this example this would be a local computer with the IP  <code>192.168.1.10</code>. </p>
+
+<p>Everytime the button is pressed, it connects to our endpoint. The script outputs the button's MAC address on every press.</p>
+      </section>
+    </div>
+
+    
+  </body>
+</html>
