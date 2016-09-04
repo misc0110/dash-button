@@ -89,7 +89,7 @@ All scripts run on the Raspberry Pi and no server/computer is needed to interact
 
 11. Make the rules persistent by installing *iptables-persistent*: `sudo apt-get install iptables-persistent`
 12. Reboot the Raspberry Pi (`sudo reboot`)
-13. Test whether the access point works by running `sudo hostapd /etc/hostapd/hostapd.conf`. You should be able to connect to the access point with any wireless device.
+13. You should be able to connect to the access point with any wireless device.
 14. Activate your Dash button using the Amazon app. You can abort the activation at the point where you have to select a product.
 15. Redirect the Amazon endpoint to the Raspberry Pi by adding the following line to */etc/dnsmasq.conf*:
 
