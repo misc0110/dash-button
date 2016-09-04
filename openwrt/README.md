@@ -1,4 +1,4 @@
-# Dash Button Fun
+# Amazon Dash Button Fun
 
 ## Dash Endpoint: OpenWRT Router
 

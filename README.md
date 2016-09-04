@@ -1,4 +1,4 @@
-# Dash Button Fun
+# Amazon Dash Button Fun
 The aim of this project is to make the Amazon Dash button useful (sorry Amazon, but now it is quite useless). To accomplish that, we developed a simple IoT framework that can connect the button to any HTTP or MQTT server.
 
 ## About
