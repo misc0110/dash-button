@@ -24,20 +24,21 @@ Both methods provide a Python script (*listen.py*) that allows to test the setup
 We provide a simple IoT framework that builds upon the *listen.py* scripts. The framework provides an abstraction from the used method and can be used with both methods. 
 
 With the framework, a handler can be installed for each buttons. Whenever the button is pressed, either a MQTT or a HTTP message is published. The code is as simple as
+```python
+from dashiot import DashIoT
 
-        from dashiot import DashIoT
+# Create an MQTT publisher that uses the network observer for detecting button presses
+mqtt = DashIoT(DashIoT.Connector.OBSERVER, DashIoT.Protocol.MQTT)
+
+# If button with mac address "ac63be5aea19" is pressed, send the mac address under the topic "dash/button1"
+mqtt.publish_handler("ac63be5aea19", lambda x: ("dash/button1", x))
         
-        # Create an MQTT publisher that uses the network observer for detecting button presses
-        mqtt = DashIoT(DashIoT.Connector.OBSERVER, DashIoT.Protocol.MQTT)
-        
-        # If button with mac address "ac63be5aea19" is pressed, send the mac address under the topic "dash/button1"
-        mqtt.publish_handler("ac63be5aea19", lambda x: ("dash/button1", x))
-        
-        # MQTT server that accepts our messages
-        mqtt.connect("iot.eclipse.org", 1883)
-        
-        # Publish all detected button presses forever
-        mqtt.run()
+# MQTT server that accepts our messages
+mqtt.connect("iot.eclipse.org", 1883)
+
+# Publish all detected button presses forever
+mqtt.run()
+```
 
 The `DashIoT` constructor takes the connector (either `DashIoT.Connector.OBSERVER` for the traffic observer or `DashIoT.Connector.SERVER` for the endpoint) and the protocol (either `DashIoT.Protocol.MQTT` or `DashIoT.Protocol.HTTP`).
 ### MQTT
