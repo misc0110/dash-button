@@ -32,47 +32,135 @@
 <a id="amazon-dash-button-fun" class="anchor" href="#amazon-dash-button-fun" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Amazon Dash Button Fun</h1>
 
 <h2>
-<a id="dash-endpoint-openwrt-router" class="anchor" href="#dash-endpoint-openwrt-router" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dash Endpoint: OpenWRT Router</h2>
+<a id="standalone-raspberry-pi" class="anchor" href="#standalone-raspberry-pi" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Standalone: Raspberry Pi</h2>
 
-<p>If you have a router running openWRT, only a few modifications are required to use it as endpoint for the Dash button. A custom endpoint prevents the button from connecting to Amazon.</p>
+<p>We will configure a Raspberry Pi to act as access point for the dash button. Similar to the openWRT solution, this gives us full control over the button's communication. The Raspberry Pi will be connected to the internet through the ethernet port and provide a WiFi access point through a WiFi adapter. </p>
 
-<p>After the button has its IP address, it starts to resolve <code>parker-gw-eu.amazon.com</code>. By sending a fake DNS-entry, we can redirect the communication to our own server. </p>
+<p>All scripts run on the Raspberry Pi and no server/computer is needed to interact with the button.</p>
 
 <p><strong>Advantages</strong></p>
 
 <ul>
-<li>easy setup</li>
-<li>does not connect to Amazon</li>
+<li>no dependencies</li>
+<li>no connection to Amazon</li>
+<li>no router modifications needed</li>
 </ul>
 
 <p><strong>Disadvantages</strong></p>
 
 <ul>
-<li>router with custom firmware required</li>
+<li>requires hardware (RPi + WiFi Dongle)</li>
 </ul>
 
 <h2>
 <a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration</h2>
 
 <ol>
+<li>Install Raspbian Jessie Lite.</li>
+<li>Install required packages <code>sudo apt-get install hostapd dnsmasq isc-dhcp-server</code> </li>
+<li>Get a WiFi adapter that is compatible with the Raspberry Pi. I used a <a href="https://www.amazon.de/Netgear-WNA1000M-100FRS-WL-USB-WNA1000M-100GRS-150MBit/dp/B004URO9FG/">Netgear WNA1000M N150 Micro Adapter</a>. It has a Realtek RTL8192CU chipset. If your chipset is supported out-of-the-box, skip the next step.</li>
+<li>Install the modified hostapd version from Realtek. Either take the binary <a href="hostapd"><code>hostapd</code></a> from this repository, or follow these steps to build it yourself.
+
+<ul>
+<li>Download the RTL8192CU driver from Realtek: <a href="http://www.realtek.com/downloads/downloadsView.aspx?Langid=1&amp;PNid=21&amp;PFid=48&amp;Level=5&amp;Conn=4&amp;DownTypeID=3&amp;GetDown=false&amp;Downloads=true#2772">http://www.realtek.com/downloads/downloadsView.aspx?Langid=1&amp;PNid=21&amp;PFid=48&amp;Level=5&amp;Conn=4&amp;DownTypeID=3&amp;GetDown=false&amp;Downloads=true#2772</a>
+</li>
+<li>Navigate to <em>RTL8188C_8192C_USB_linux_v4.0.2_9000.20130911/wpa_supplicant_hostapd/</em> and extract <em>wpa_supplicant_hostapd-0.8_rtw_r7475.20130812.tar.gz</em>
+</li>
+<li>navigate to <em>wpa_supplicant_hostapd-0.8_rtw_r7475.20130812/hostapd/</em> and build with <code>make</code>.</li>
+<li>remove the installed <em>hostapd</em> binary <code>sudo mv /usr/sbin/hostapd /usr/sbin/hostapd.orig</code>
+</li>
+<li>install the new <em>hostapd</em> binary <code>sudo cp hostapd /usr/sbin/hostapd</code>
+</li>
+</ul>
+</li>
+<li>
+<p>Configure <em>hostapd</em> by creating the file <em>/etc/hostapd/hostapd.conf</em> with the following contents (if you don't have the RTL8192CU chipset, replace <code>rtl871xdrv</code> with <code>nl80211</code>)</p>
+
+<pre><code>interface=wlan0
+driver=rtl871xdrv
+ssid=DashIoT
+channel=1
+auth_algs=1
+wmm_enabled=0
+wpa=1
+wpa_passphrase=yourpassword
+wpa_key_mgmt=WPA-PSK
+wpa_pairwise=CCMP
+macaddr_acl=0
+</code></pre>
+</li>
+<li>
+<p>Configure the WiFi adapter in <em>/etc/network/interfaces</em> to use the 192.168.50.x network. It should look like this</p>
+
+<pre><code>auto lo
+iface lo inet loopback
+
+iface eth0 inet manual
+
+iface wlan0 inet static
+    address 192.168.50.1
+    netmask 255.255.255.0
+
+hostapd /etc/hostapd/hostapd.conf
+</code></pre>
+</li>
+<li>
+<p>Configure the DHCP server in <em>/etc/dhcp/dhcp.conf</em>. It should look like this</p>
+
+<pre><code>default-lease-time 600;
+max-lease-time 7200;
+option routers 192.168.50.1;
+option domain-name-servers 192.168.50.1, 192.168.50.1;
+
+subnet 192.168.50.0 netmask 255.255.255.0 {
+        pool {
+                max-lease-time 600;
+                range 192.168.50.10 192.168.50.50;
+                option routers 192.168.50.1;
+                option domain-name-servers 192.168.50.1, 192.168.50.1;
+                allow unknown-clients;
+        }
+}
+</code></pre>
+</li>
+<li>
+<p>Disable Google's DNS server</p>
+
+<pre><code>sudo iptables -t nat -I PREROUTING -j DNAT --destination 8.8.8.8 --to 192.168.50.1
+sudo iptables -t nat -I PREROUTING -j DNAT --destination 8.8.4.4 --to 192.168.50.1
+</code></pre>
+</li>
+<li>
+<p>Enable NAT:</p>
+
+<pre><code>sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+sudo iptables -A FORWARD -i eth0 -o wlan0 -j ACCEPT
+sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
+</code></pre>
+</li>
+<li>
+<p>Enable IPv4 forwarding. Add following line to <em>/etc/sysctl.conf</em>: </p>
+
+<pre><code>net.ipv4.ip_forward=1
+</code></pre>
+</li>
+<li><p>Make the rules persistent by installing <em>iptables-persistent</em>: <code>sudo apt-get install iptables-persistent</code></p></li>
+<li>Reboot the Raspberry Pi (<code>sudo reboot</code>)</li>
+<li>You should be able to connect to the access point with any wireless device.</li>
 <li>Activate your Dash button using the Amazon app. You can abort the activation at the point where you have to select a product.</li>
 <li>
-<p>Edit <em>/etc/config/dhcp</em>, add the following line in the <code>config dnsmasq</code> section:</p>
+<p>Redirect the Amazon endpoint to the Raspberry Pi by adding the following line to <em>/etc/dnsmasq.conf</em>:</p>
 
-<pre><code>list address '/parker-gw-eu.amazon.com/192.168.1.10`
+<pre><code>address=/parker-gw-eu.amazon.com/192.168.50.1
 </code></pre>
-
-<p>Here, <code>192.168.1.10</code> is the IP address of our Dash endpoint. This can be either a local IP or any IP address on the internet.</p>
 </li>
-<li><p>Restart dnsmasq: <code>/etc/init.d/dnsmasq restart</code></p></li>
+<li><p>Restart <em>dnsmasq</em>: <code>sudo service dnsmasq restart</code></p></li>
 </ol>
 
 <h2>
 <a id="listening-for-button-presses" class="anchor" href="#listening-for-button-presses" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Listening for button presses</h2>
 
-<p>Run the <code>listen.py</code> script as your Dash endpoint on the server specified in <em>/etc/config/dhcp</em>. In this example this would be a local computer with the IP  <code>192.168.1.10</code>. </p>
-
-<p>Everytime the button is pressed, it connects to our endpoint. The script outputs the button's MAC address on every press.</p>
+<p>All the tools from the openWRT setup also work with the Raspberry Pi setup. Just run <code>sudo python openwrt/listen.py</code> to test the setup. Every time the button is pressed, the MAC address of the button is displayed.</p>
       </section>
     </div>
 
