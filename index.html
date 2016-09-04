@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <title>Dash-button by misc0110</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>Dash-button</h1>
+        <h2>Making the Amazon Dash Button useful</h2>
+
+        <section id="downloads">
+          <a href="https://github.com/misc0110/dash-button/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/misc0110/dash-button/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/misc0110/dash-button" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1>
+<a id="amazon-dash-button-fun" class="anchor" href="#amazon-dash-button-fun" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Amazon Dash Button Fun</h1>
+
+<p>The aim of this project is to make the Amazon Dash button useful (sorry Amazon, but now it is quite useless). To accomplish that, we developed a simple IoT framework that can connect the button to any HTTP or MQTT server.</p>
+
+<h2>
+<a id="about" class="anchor" href="#about" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>About</h2>
+
+<p>This repository provides two methods that can be used in three different ways to use any Amazon Dash button for your own purpose. </p>
+
+<ul>
+<li>Quick Hack: Observing the traffic</li>
+<li>Dash Endpoint
+
+<ul>
+<li>On an openWRT router</li>
+<li>Using a Raspberry Pi</li>
+</ul>
+</li>
+</ul>
+
+<p>Furthermore, the project provides a simple Python IoT framework, that allows to publish button presses as HTTP or MQTT messages. It supports all three ways of observing button presses. </p>
+
+<h2>
+<a id="listening-to-the-button" class="anchor" href="#listening-to-the-button" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Listening to the Button</h2>
+
+<p>For a quick test, you can try the <a href="observer">traffic observer</a>. This quick hack monitors the network traffic for the dash button's DHCP request. 
+If you want to use the button for a real project, I suggest either setting up an <a href="openwrt">openWRT router</a> or a <a href="rpi">Raspberry Pi</a> as an endpoint.
+(Either click on the links or checkout the README.md in the respective folder)</p>
+
+<p>Both methods provide a Python script (<em>listen.py</em>) that allows to test the setup. It can also be used as base for own projecs.</p>
+
+<h2>
+<a id="iot-framework" class="anchor" href="#iot-framework" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>IoT Framework</h2>
+
+<p>We provide a simple IoT framework that builds upon the <em>listen.py</em> scripts. The framework provides an abstraction from the used method and can be used with both methods. </p>
+
+<p>With the framework, a handler can be installed for each buttons. Whenever the button is pressed, either a MQTT or a HTTP message is published. The code is as simple as</p>
+
+<div class="highlight highlight-source-python"><pre><span class="pl-k">from</span> dashiot <span class="pl-k">import</span> DashIoT
+
+<span class="pl-c"># Create an MQTT publisher that uses the network observer for detecting button presses</span>
+mqtt <span class="pl-k">=</span> DashIoT(DashIoT.Connector.<span class="pl-c1">OBSERVER</span>, DashIoT.Protocol.<span class="pl-c1">MQTT</span>)
+
+<span class="pl-c"># If button with mac address "ac63be5aea19" is pressed, send the mac address under the topic "dash/button1"</span>
+mqtt.publish_handler(<span class="pl-s"><span class="pl-pds">"</span>ac63be5aea19<span class="pl-pds">"</span></span>, <span class="pl-k">lambda</span> <span class="pl-smi">x</span>: (<span class="pl-s"><span class="pl-pds">"</span>dash/button1<span class="pl-pds">"</span></span>, x))
+
+<span class="pl-c"># MQTT server that accepts our messages</span>
+mqtt.connect(<span class="pl-s"><span class="pl-pds">"</span>iot.eclipse.org<span class="pl-pds">"</span></span>, <span class="pl-c1">1883</span>)
+
+<span class="pl-c"># Publish all detected button presses forever</span>
+mqtt.run()</pre></div>
+
+<p>The <code>DashIoT</code> constructor takes the connector (either <code>DashIoT.Connector.OBSERVER</code> for the traffic observer or <code>DashIoT.Connector.SERVER</code> for the endpoint) and the protocol (either <code>DashIoT.Protocol.MQTT</code> or <code>DashIoT.Protocol.HTTP</code>).</p>
+
+<h3>
+<a id="mqtt" class="anchor" href="#mqtt" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>MQTT</h3>
+
+<p>If MQTT is used, the Python package <code>paho-mqtt</code> has to be installed (e.g. using <code>sudo pip install paho-mqtt</code>). The sample (<em>test_mqtt.py</em>) uses Eclipse's public MQTT server (<a href="http://iot.eclipse.org">iot.eclipse.org</a>). However, any other MQTT server can be used. </p>
+
+<p>For every button, a handler has to be configured using <code>publish_handler</code>. The first argument is the button's MAC address, the second parameter is a callback function that receives the MAC address and returns a tuple of topic and message.</p>
+
+<p>The script <em>test_view_mqtt.py</em> is a simple MQTT subscriber that displays the published messages.</p>
+
+<h3>
+<a id="http" class="anchor" href="#http" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>HTTP</h3>
+
+<p>If HTTP is used, the framework issues an HTTP GET request to the given URL. As with the MQTT handler, the <code>publish_handler</code> function takes the MAC address of the button as the first parameter and a callback funtion as the second parameter. The callback function returns a tuple of GET parameter name and GET parameter value, e.g. if the GET request should be "?msg=data", the callback must return <code>("msg", "data")</code>.</p>
+
+<p>A simple HTTP test server can be started using <code>sudo python -m SimpleHTTPServer 80</code>.</p>
+      </section>
+    </div>
+
+    
+  </body>
+</html>
